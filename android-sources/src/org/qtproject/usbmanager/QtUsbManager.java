@@ -3,14 +3,20 @@ package org.qtproject.qt5.android.bindings;
 import java.util.List;
 
 import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.hardware.usb.UsbDevice;
 
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
+import com.hoho.android.usbserial.driver.ProbeTable;
+import com.hoho.android.usbserial.driver.CdcAcmSerialDriver;
 
 
 public class QtUsbManager extends QtActivity {
@@ -22,26 +28,58 @@ public class QtUsbManager extends QtActivity {
     private static UsbDeviceConnection _currentConnection;
     private static List<UsbSerialDriver> _availableDrivers;
 
+    private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
+
+    private final BroadcastReceiver _usbReceiver = new BroadcastReceiver() {
+
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbDevice device = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if(device != null){
+                            connectToDevice(device);
+                       }
+                    }
+                    else {
+                        //Log.d(TAG, "permission denied for device " + device);
+                    }
+                }
+            }
+        }
+    };
+
     public static QtUsbManager createQtUsbManager()
     {
         _usbManager = (UsbManager) _instance.getSystemService(Context.USB_SERVICE);
         return _instance;
     }
 
-    public QtUsbManager() {
+    public QtUsbManager()
+    {
         _activity = this;
         _instance = this;
     }
 
     public int searchDrivers()
     {
-        _availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(_usbManager);
+        ProbeTable customTable = new ProbeTable();
+        customTable.addProduct(0x0451, 0x16a8, CdcAcmSerialDriver.class);
+        UsbSerialProber prober = new UsbSerialProber(customTable);
+
+        _availableDrivers = prober.findAllDrivers(_usbManager);
         if(!_availableDrivers.isEmpty()) {
             _currentDriver = _availableDrivers.get(0);
-            _currentConnection = _usbManager.openDevice(_currentDriver.getDevice());
-            if (_currentConnection == null) {
-              // You probably need to call UsbManager.requestPermission(driver.getDevice(), ..)
-              return -1;
+            if (!_usbManager.hasPermission(_currentDriver.getDevice())) {
+                    PendingIntent pi = PendingIntent.getBroadcast(_instance, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    _usbManager.requestPermission(_currentDriver.getDevice(), pi);
+                    _instance.registerReceiver(_usbReceiver, new IntentFilter(ACTION_USB_PERMISSION));
+                    return -1;
+            }
+            else {
+                  connectToDevice(_currentDriver.getDevice());
             }
         }
         return _availableDrivers.size();
@@ -55,4 +93,8 @@ public class QtUsbManager extends QtActivity {
             return -1;
     }
 
+    private void connectToDevice(UsbDevice device)
+    {
+        _currentConnection = _usbManager.openDevice(device);
+    }
 }

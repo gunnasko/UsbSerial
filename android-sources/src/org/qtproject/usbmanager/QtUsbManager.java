@@ -11,6 +11,8 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.hardware.usb.UsbDevice;
+import java.io.IOException;
+
 
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
@@ -26,8 +28,11 @@ public class QtUsbManager extends QtActivity {
     private static UsbManager _usbManager;
     private static UsbSerialDriver _currentDriver;
     private static UsbDeviceConnection _currentConnection;
+    private static UsbSerialPort _currentPort;
+
     private static List<UsbSerialDriver> _availableDrivers;
 
+    private static final int TIMEOUT_IN_MS = 100;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 
     private final BroadcastReceiver _usbReceiver = new BroadcastReceiver() {
@@ -93,8 +98,63 @@ public class QtUsbManager extends QtActivity {
             return -1;
     }
 
+    public boolean setParameters(int baud)
+    {
+        if(_currentConnection == null || _currentPort == null)
+            return false;
+
+        try {
+            _currentPort.setParameters(baud, _currentPort.DATABITS_8, _currentPort.STOPBITS_1, _currentPort.PARITY_NONE);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean open() {
+        if(_currentConnection == null || _currentPort == null)
+            return false;
+
+        try {
+            _currentPort.open(_currentConnection);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public byte[] read() {
+        byte[] buffer = new byte[16];
+        if(_currentConnection == null || _currentPort == null)
+            return null;
+
+        try {
+            _currentPort.read(buffer, TIMEOUT_IN_MS);
+        } catch (IOException e) {
+            return null;
+        }
+        return buffer;
+    }
+
+    public boolean write(byte[] src) {
+        byte[] ret;
+        if(_currentConnection == null || _currentPort == null)
+            return false;
+
+        try {
+            _currentPort.write(src, TIMEOUT_IN_MS);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
     private void connectToDevice(UsbDevice device)
     {
         _currentConnection = _usbManager.openDevice(device);
+        List<UsbSerialPort> ports = _currentDriver.getPorts();
+        if(!ports.isEmpty()) {
+            _currentPort = ports.get(0);
+        }
     }
 }

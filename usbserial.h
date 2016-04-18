@@ -17,6 +17,12 @@ public:
     Q_INVOKABLE int searchDrivers();
     Q_INVOKABLE int getCurrentVendorId();
 
+    void setParameters(int baudRate);
+    qint64 write(const char *data, qint64 maxSize);
+    qint64 write(const char *data);
+
+    QByteArray readAll();
+
 private:
     jobject usbSerialObject;
     JNIEnv* attachJniToThread();

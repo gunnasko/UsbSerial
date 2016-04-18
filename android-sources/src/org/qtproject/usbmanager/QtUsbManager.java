@@ -136,17 +136,17 @@ public class QtUsbManager extends QtActivity {
         return buffer;
     }
 
-    public boolean write(byte[] src) {
-        byte[] ret;
+    public int write(byte[] src) {
+        int writeCount = 0;
         if(_currentConnection == null || _currentPort == null)
-            return false;
+            return writeCount;
 
         try {
-            _currentPort.write(src, TIMEOUT_IN_MS);
+            writeCount = _currentPort.write(src, TIMEOUT_IN_MS);
         } catch (IOException e) {
-            return false;
+            return writeCount;
         }
-        return true;
+        return writeCount;
     }
 
     private void connectToDevice(UsbDevice device)

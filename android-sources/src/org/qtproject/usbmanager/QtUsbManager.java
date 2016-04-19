@@ -13,6 +13,8 @@ import android.hardware.usb.UsbManager;
 import android.hardware.usb.UsbDevice;
 import java.io.IOException;
 
+import android.util.Log;
+
 
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
@@ -32,8 +34,10 @@ public class QtUsbManager extends QtActivity {
 
     private static List<UsbSerialDriver> _availableDrivers;
 
-    private static final int TIMEOUT_IN_MS = 100;
+    private static final int TIMEOUT_IN_MS = 5000;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
+    private static final String TAG = "QtUsbManager";
+
 
     private final BroadcastReceiver _usbReceiver = new BroadcastReceiver() {
 
@@ -59,6 +63,7 @@ public class QtUsbManager extends QtActivity {
     public static QtUsbManager createQtUsbManager()
     {
         _usbManager = (UsbManager) _instance.getSystemService(Context.USB_SERVICE);
+        Log.w(TAG, "Created QtUsbManager!");
         return _instance;
     }
 
@@ -70,9 +75,9 @@ public class QtUsbManager extends QtActivity {
 
     public int searchDrivers()
     {
-        ProbeTable customTable = new ProbeTable();
-        customTable.addProduct(0x0451, 0x16a8, CdcAcmSerialDriver.class);
-        UsbSerialProber prober = new UsbSerialProber(customTable);
+        //ProbeTable customTable = new ProbeTable();
+        //customTable.addProduct(0x0451, 0x16a8, CdcAcmSerialDriver.class);
+        UsbSerialProber prober = UsbSerialProber.getDefaultProber();
 
         _availableDrivers = prober.findAllDrivers(_usbManager);
         if(!_availableDrivers.isEmpty()) {
@@ -123,13 +128,24 @@ public class QtUsbManager extends QtActivity {
         return true;
     }
 
-    public byte[] read() {
+    public boolean close() {
+        if(_currentPort == null)
+            return false;
+        try {
+            _currentPort.close();
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public byte[] read(int msecs) {
         byte[] buffer = new byte[16];
         if(_currentConnection == null || _currentPort == null)
             return null;
 
         try {
-            _currentPort.read(buffer, TIMEOUT_IN_MS);
+            _currentPort.read(buffer, msecs);
         } catch (IOException e) {
             return null;
         }
@@ -141,9 +157,14 @@ public class QtUsbManager extends QtActivity {
         if(_currentConnection == null || _currentPort == null)
             return writeCount;
 
+        for (byte b: src) {
+            Log.w(TAG, String.format("0x%20x", b));
+        }
+
         try {
             writeCount = _currentPort.write(src, TIMEOUT_IN_MS);
         } catch (IOException e) {
+            Log.e(TAG, "Exception caught when writing to port!", e);
             return writeCount;
         }
         return writeCount;

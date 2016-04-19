@@ -30,6 +30,33 @@ Window {
             idButton.text = usbSerial.getCurrentVendorId()
         }
     }
+
+    Button {
+        anchors.left: searchButton.left
+        anchors.top: searchButton.bottom
+        anchors.leftMargin: 5
+        id: writeReadButton
+        text: "Send message"
+        onClicked: {
+            messageValue.text = usbSerial.writeWaitRead()
+        }
+    }
+    Text {
+        id: messageLabel
+        text: "Message recieved"
+        anchors.left: writeReadButton.right
+        anchors.top: writeReadButton.top
+    }
+
+    Text {
+        id: messageValue
+        text: "Not searched"
+        anchors.left: messageLabel.right
+        anchors.top: messageLabel.top
+    }
+
+
+
     Button {
         anchors.top: idButton.bottom
         anchors.topMargin: 5

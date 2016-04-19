@@ -126,9 +126,9 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
                 if (!mConnection.claimInterface(mDataInterface, true)) {
                     throw new IOException("Could not claim data interface.");
                 }
-                mReadEndpoint = mDataInterface.getEndpoint(1);
+                mReadEndpoint = mDataInterface.getEndpoint((mDevice.getVendorId() == 0x0451)? 0 : 1);
                 Log.d(TAG, "Read endpoint direction: " + mReadEndpoint.getDirection());
-                mWriteEndpoint = mDataInterface.getEndpoint(0);
+                mWriteEndpoint = mDataInterface.getEndpoint((mDevice.getVendorId() == 0x0451)? 1 : 0);
                 Log.d(TAG, "Write endpoint direction: " + mWriteEndpoint.getDirection());
                 if (mEnableAsyncReads) {
                   Log.d(TAG, "Async reads enabled");

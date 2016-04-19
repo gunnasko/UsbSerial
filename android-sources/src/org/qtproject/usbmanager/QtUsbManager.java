@@ -111,18 +111,21 @@ public class QtUsbManager extends QtActivity {
         try {
             _currentPort.setParameters(baud, _currentPort.DATABITS_8, _currentPort.STOPBITS_1, _currentPort.PARITY_NONE);
         } catch (IOException e) {
+            Log.e(TAG, "Error while setting parameters", e);
             return false;
         }
         return true;
     }
 
     public boolean open() {
-        if(_currentConnection == null || _currentPort == null)
+        if(_currentConnection == null || _currentPort == null) {
             return false;
+        }
 
         try {
             _currentPort.open(_currentConnection);
         } catch (IOException e) {
+            Log.e(TAG, "Error while opening", e);
             return false;
         }
         return true;
@@ -134,6 +137,7 @@ public class QtUsbManager extends QtActivity {
         try {
             _currentPort.close();
         } catch (IOException e) {
+            Log.e(TAG, "Error while closing", e);
             return false;
         }
         return true;
@@ -147,6 +151,7 @@ public class QtUsbManager extends QtActivity {
         try {
             _currentPort.read(buffer, msecs);
         } catch (IOException e) {
+            Log.e(TAG, "Error while reading", e);
             return null;
         }
         return buffer;

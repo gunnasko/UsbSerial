@@ -10,7 +10,7 @@ Window {
         id: searchButton
         text: "Search devices"
         onClicked: {
-            numberLabel.text = usbSerial.searchDrivers()
+            numberLabel.text = usbSerial.searchAndConnect()
         }
     }
     Text {
@@ -32,9 +32,8 @@ Window {
     }
 
     Button {
-        anchors.left: searchButton.left
-        anchors.top: searchButton.bottom
-        anchors.leftMargin: 5
+        anchors.bottom: messageLabel.top
+        anchors.left: messageLabel.left
         id: writeReadButton
         text: "Send message"
         onClicked: {
@@ -43,9 +42,11 @@ Window {
     }
     Text {
         id: messageLabel
-        text: "Message recieved"
-        anchors.left: writeReadButton.right
-        anchors.top: writeReadButton.top
+        text: "Message recieved:"
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.leftMargin: 5
+
     }
 
     Text {

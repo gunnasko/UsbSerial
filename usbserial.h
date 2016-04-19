@@ -17,8 +17,9 @@ class UsbSerial : public QObject
 public:
     explicit UsbSerial(QObject *parent = 0);
     ~UsbSerial();
-    Q_INVOKABLE int searchDrivers();
+    int searchDrivers();
     Q_INVOKABLE int getCurrentVendorId();
+    Q_INVOKABLE bool searchAndConnect();
 
     Q_INVOKABLE bool setParameters(int baudRate);
     qint64 write(const char *data, qint64 maxSize);

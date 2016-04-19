@@ -41,6 +41,20 @@ int UsbSerial::getCurrentVendorId()
     return vendorId;
 }
 
+bool UsbSerial::searchAndConnect()
+{
+    if(searchDrivers() <= 0)
+        return false;
+
+    if(!open())
+        return false;
+
+    if(!setParameters(115200))
+        return false;
+
+    return true;
+}
+
 bool UsbSerial::setParameters(int baudRate)
 {
     JNIEnv* env = attachJniToThread();
@@ -106,10 +120,9 @@ QByteArray UsbSerial::readAll()
 QString UsbSerial::writeWaitRead()
 {
     if(!open()) {
-        close();
         return QString("Failed to open");
     }
-    setParameters(115200);
+
     QByteArray frame;
     frame.append(0xfe); //Start of frame;
     frame.append((char)0x00); //Length of general fram
@@ -123,8 +136,6 @@ QString UsbSerial::writeWaitRead()
     }
 
     QByteArray ret = waitForReadyRead(WAIT_TIME_LONG);
-
-    close();
     return QString(ret.toHex());
 }
 
